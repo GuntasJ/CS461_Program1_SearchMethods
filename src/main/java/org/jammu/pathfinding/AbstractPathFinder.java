@@ -8,6 +8,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * This class is a base class for all the path finding algorithm classes.
+ * The main purpose of it is to take in cities and connections and assign the cities to the connections they have
+ */
 public abstract class AbstractPathFinder implements PathFinder {
 
     protected Map<City, List<City>> adjacencyMap;

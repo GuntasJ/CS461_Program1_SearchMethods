@@ -3,10 +3,7 @@ package org.jammu.pathfinding;
 import org.jammu.city.City;
 import org.jammu.city.Connection;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class IdDfsPathFinder extends AbstractPathFinder {
 
@@ -14,42 +11,51 @@ public class IdDfsPathFinder extends AbstractPathFinder {
         super(cityList, connectionList);
     }
 
-    private boolean depthFirstSearch(City currentCity, City endCity, Set<City> visited, List<City> path, int maxDepth) {
-        if (currentCity.equals(endCity)) {
-            path.add(currentCity);
-            return true; // Found a path
-        }
+    //This algo will be similar to DFS with some key differences
+    private List<City> searchWithLimitedDepth(City startCity, City endCity, int maxDepth) {
+        Map<City, City> parentMap = new HashMap<>();
+        Deque<City> stack = new ArrayDeque<>();
+        Set<City> visitedCities = new HashSet<>();
 
-        if (maxDepth == 0) {
-            return false; // Reached maximum depth without finding the destination
-        }
+        stack.addFirst(startCity);
+        visitedCities.add(startCity);
 
-        visited.add(currentCity);
+        while(!stack.isEmpty()) {
+            City currentCity = stack.removeFirst();
+            if(currentCity == endCity) {
+                return PathFinderUtils.constructPath(startCity, endCity, parentMap);
+            }
 
-        for (City neighbor : adjacencyMap.get(currentCity)) {
-            if (!visited.contains(neighbor)) {
-                path.add(currentCity);
-                if (depthFirstSearch(neighbor, endCity, visited, path, maxDepth - 1)) {
-                    return true; // Found a path
+            //First key difference
+            //Here we only proceed with the pushing of the cities on to the stack IF
+            //the amount of cities that have a connection to the current city are less than the max depth
+            //This restricts when we can proceed with pushing the cities on the stack
+            //If a city has many connections, then we will wait until the max depth increases.
+            if(parentMap.keySet().stream()
+                    .filter(city -> parentMap.get(city) == currentCity).count() < maxDepth) {
+                for(City adjacentCity : adjacencyMap.get(currentCity)) {
+                    if(!visitedCities.contains(adjacentCity)) {
+                        stack.push(adjacentCity);
+                        visitedCities.add(adjacentCity);
+                        parentMap.put(adjacentCity, currentCity);
+                    }
                 }
-                path.remove(path.size() - 1);
             }
         }
-
-        return false;
+        return Collections.emptyList();
     }
 
     @Override
-    public List<City> findShortestPath(City startCity, City endCity) {
-        int maxDepth = 1;
-        List<City> path = new ArrayList<>();
-
-        while (true) {
-            Set<City> visited = new HashSet<>();
-            if (depthFirstSearch(startCity, endCity, visited, path, maxDepth)) {
+    public List<City> findPath(City startCity, City endCity) {
+        //This loop is used to set the maxDepth for the dfs.
+        //Will essentially do many dfs search to find the path
+        for(int maxDepth = 0; maxDepth < Integer.MAX_VALUE; maxDepth++) {
+            List<City> path = searchWithLimitedDepth(startCity, endCity, maxDepth);
+            if(!path.isEmpty()) {
                 return path;
             }
-            maxDepth++;
         }
+        return Collections.emptyList();
     }
+
 }

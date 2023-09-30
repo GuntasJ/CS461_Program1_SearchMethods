@@ -23,7 +23,8 @@ public class UserInterface {
                 Choose an option out of the following by selecting the number as listed
                 1.) Brute force search
                 2.) Best-first-search
-                3.) A* search""");
+                3.) A* search
+                99.) Quit""");
     }
 
     public void printBruteForceMenu() {
@@ -57,7 +58,14 @@ public class UserInterface {
             do {
                 printMainMenu();
                 selection = Integer.parseInt(scanner.nextLine());
+                if(selection == 99) {
+                    break;
+                }
             } while (selection != 1 && selection != 2 && selection != 3);
+
+            if(selection == 99) {
+                break;
+            }
 
             if(selection == 1) {
                 do {
@@ -109,15 +117,19 @@ public class UserInterface {
                     .findFirst()
                     .get();
 
-            long startTime = System.currentTimeMillis();
-            List<City> path = pathFinder.findShortestPath(startCity, endCity);
-            long endTime = System.currentTimeMillis();
+            long startTime = System.nanoTime();
+            List<City> path = pathFinder.findPath(startCity, endCity);
+            long endTime = System.nanoTime();
 
+
+            double timeInSeconds = (endTime - startTime) / 1_000_000_000.0;
             System.out.println();
-            System.out.println("It took " + (endTime - startTime) + " ms\nThe path that it took was: ");
+            System.out.println("It took " + timeInSeconds + " ns\nThe path that it took was: ");
+            System.out.println();
             path.forEach(System.out::print);
             System.out.println();
             System.out.println("Distance of path: " + PathFinderUtils.calculateDistance(path));
+            System.out.println("\n\n");
         }
     }
 

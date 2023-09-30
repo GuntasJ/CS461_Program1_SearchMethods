@@ -3,6 +3,7 @@ package org.jammu.pathfinding;
 import org.jammu.city.City;
 import org.jammu.city.Connection;
 
+import java.nio.file.Path;
 import java.util.*;
 
 public class BestFirstSearchPathFinder extends AbstractPathFinder {
@@ -12,36 +13,39 @@ public class BestFirstSearchPathFinder extends AbstractPathFinder {
     }
 
     @Override
-    public List<City> findShortestPath(City startCity, City endCity) {
-        PriorityQueue<City> priorityQueue = new PriorityQueue<>((city1, city2) -> {
-            double distance1 = PathFinderUtils.calculateDistance(city1, endCity);
-            double distance2 = PathFinderUtils.calculateDistance(city2, endCity);
-            return Double.compare(distance1, distance2);
-        });
-
+    public List<City> findPath(City startCity, City endCity) {
+        //Set up is similar to the breadth-first search
+        //Have a priority queue to find the best next city to search
         Map<City, City> parentMap = new HashMap<>();
-        Set<City> visited = new HashSet<>();
+        Queue<City> cityPriorityQueue = new PriorityQueue<>(Comparator.comparingDouble(
+                city -> PathFinderUtils.calculateDistance(city, endCity)
+        ));
+        Set<City> visitedCities = new HashSet<>();
 
-        priorityQueue.offer(startCity);
-        visited.add(startCity);
+        cityPriorityQueue.add(startCity);
+        visitedCities.add(startCity);
 
-        while (!priorityQueue.isEmpty()) {
-            City currentCity = priorityQueue.poll();
+        while (!cityPriorityQueue.isEmpty()) {
+            City currentCity = cityPriorityQueue.remove();
 
-            if (currentCity.equals(endCity)) {
-                return PathFinderUtils.reconstructPath(parentMap, startCity, endCity);
+            if (currentCity == endCity) {
+                return PathFinderUtils.constructPath(startCity, endCity, parentMap);
             }
 
-            for (City neighbor : adjacencyMap.get(currentCity)) {
-                if (!visited.contains(neighbor)) {
-                    priorityQueue.offer(neighbor);
-                    visited.add(neighbor);
-                    parentMap.put(neighbor, currentCity);
+            //This is the same as the dfs and bfs only difference being the priority queue. PO in java is basically
+            //a heap. This will retrieve the best item in O(log(n))
+
+            for (City adjacentCity : adjacencyMap.get(currentCity)) {
+                if (!visitedCities.contains(adjacentCity)) {
+                    cityPriorityQueue.add(adjacentCity);
+                    visitedCities.add(adjacentCity);
+                    parentMap.put(adjacentCity, currentCity);
                 }
             }
         }
 
-        // If no path is found
-        return new ArrayList<>();
+
+        return Collections.emptyList();
     }
+
 }

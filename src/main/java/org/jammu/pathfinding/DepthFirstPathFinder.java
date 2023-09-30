@@ -12,31 +12,39 @@ public class DepthFirstPathFinder extends AbstractPathFinder {
     }
 
     @Override
-    public List<City> findShortestPath(City startCity, City endCity) {
-        Set<City> visited = new HashSet<>();
+
+    public List<City> findPath(City startCity, City endCity) {
+        //I used chatgpt here. My understanding of the parent-map is that it builds the path for us.
+        //It links the city to next city in line
         Map<City, City> parentMap = new HashMap<>();
-        Stack<City> stack = new Stack<>();
+        // The use of a deque is cuz in java docs they use dont use stack and instead use Deque
+        Deque<City> stack = new ArrayDeque<>();
+        // Reason for using a set instead of a list based (linked list or arraylist) is for the O(1) contains operation
+        //This makes the code faster.
+        Set<City> visitedCities = new HashSet<>();
 
-        stack.push(startCity);
-        visited.add(startCity);
+        stack.addFirst(startCity);
+        visitedCities.add(startCity);
 
-        while (!stack.isEmpty()) {
-            City currentCity = stack.pop();
+        //Go while the stack isn't empty in which case there is no solution
+        while(!stack.isEmpty()) {
+            City currentCity = stack.removeFirst();
 
-            if (currentCity.equals(endCity)) {
-                return PathFinderUtils.reconstructPath(parentMap, startCity, endCity);
+            //this means we have found a viable path
+            if(currentCity == endCity) {
+                return PathFinderUtils.constructPath(startCity, endCity, parentMap);
             }
 
-            for (City neighbor : adjacencyMap.get(currentCity)) {
-                if (!visited.contains(neighbor)) {
-                    stack.push(neighbor);
-                    visited.add(neighbor);
-                    parentMap.put(neighbor, currentCity);
+            //Start adding cities to the top of the stack. Due to stack being LIFO, this will go down one "branch"
+            for(City adjacentCity : adjacencyMap.get(currentCity)) {
+                if(!visitedCities.contains(adjacentCity)) {
+                    stack.addFirst(adjacentCity);
+                    visitedCities.add(adjacentCity);
+                    parentMap.put(adjacentCity, currentCity);
                 }
             }
         }
-
-        // If no path is found
-        return new ArrayList<>();
+        //return an empty list if there is no path.
+        return Collections.emptyList();
     }
 }

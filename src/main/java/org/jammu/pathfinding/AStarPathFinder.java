@@ -11,54 +11,67 @@ public class AStarPathFinder extends AbstractPathFinder {
         super(cityList, connectionList);
     }
 
-    private List<City> reconstructPath(Map<City, City> cameFrom, City currentCity) {
-        List<City> path = new ArrayList<>();
-        while (cameFrom.containsKey(currentCity)) {
-            path.add(currentCity);
-            currentCity = cameFrom.get(currentCity);
-        }
-        path.add(currentCity);
-        Collections.reverse(path);
-        return path;
-    }
-
-
     @Override
-    public List<City> findShortestPath(City startCity, City endCity) {
-        PriorityQueue<City> openSet = new PriorityQueue<>((city1, city2) -> {
-            double f1 = PathFinderUtils.calculateDistance(city1, endCity) +
-                    PathFinderUtils.calculateDistance(startCity, city1);
-            double f2 = PathFinderUtils.calculateDistance(city2, endCity) +
-                    PathFinderUtils.calculateDistance(startCity, city2);
-            return Double.compare(f1, f2);
-        });
+    public List<City> findPath(City startCity, City endCity) {
+        Map<City, City> parentMap = new HashMap<>();
+        //cost from start to n
+        Map<City, Double> gScoreMap = new HashMap<>();
+        //cost from start to goal
+        //h is cost of n to goal
+        Map<City, Double> fScoreMap = new HashMap<>();
+        Queue<City> openSet = new PriorityQueue<>(Comparator.comparingDouble(fScoreMap::get));
+        Set<City> closedSet = new HashSet<>();
 
-        Map<City, City> cameFrom = new HashMap<>();
-        Map<City, Double> gScore = new HashMap<>();
-        openSet.offer(startCity);
-        gScore.put(startCity, 0.0);
+        //start off with starting cost being 0 for g
+        gScoreMap.put(startCity, 0.0);
+        //start off with starting cost being the distance between start and end city for f
+        //This is a direct single distance.
+        fScoreMap.put(startCity, PathFinderUtils.calculateDistance(startCity, endCity));
+        openSet.add(startCity);
 
-        while (!openSet.isEmpty()) {
-            City currentCity = openSet.poll();
+        while(!openSet.isEmpty()) {
+            City currentCity = openSet.remove();
 
-            if (currentCity.equals(endCity)) {
-                return reconstructPath(cameFrom, currentCity);
+            if(currentCity == endCity) {
+                return PathFinderUtils.constructPath(startCity, endCity, parentMap);
             }
 
-            for (City neighbor : adjacencyMap.get(currentCity)) {
-                double tentativeGScore = gScore.getOrDefault(currentCity, Double.MAX_VALUE)
-                        + PathFinderUtils.calculateDistance(currentCity, neighbor);
+            //Unlike other algorithms, here we are seeing adding the current city to the closed set after our
+            //found path check
+            closedSet.add(currentCity);
 
-                if (tentativeGScore < gScore.getOrDefault(neighbor, Double.MAX_VALUE)) {
-                    cameFrom.put(neighbor, currentCity);
-                    gScore.put(neighbor, tentativeGScore);
-                    double fScore = tentativeGScore + PathFinderUtils.calculateDistance(neighbor, endCity);
-                    openSet.offer(neighbor);
+            for(City adjacentCity : adjacencyMap.get(currentCity)) {
+                //no point in continuing if the next city we are checking is already in the closed set
+                if(closedSet.contains(adjacentCity)) {
+                    continue;
+                }
+                //calculate a possible g score to the next city
+                double tentativeGScore = gScoreMap.get(currentCity) +
+                        PathFinderUtils.calculateDistance(currentCity, adjacentCity);
+
+                //two conditions:
+                //if our open set does not have the adjacent city
+                //if our g score we have calculated is less than the g score to the adjacent city
+
+                //That second check is to ensure that even if we already have this adjacent city in the open set,
+                //if our path from current to adjacent is a better path than what from start to adjacent
+                //to choose our path.
+                //Because we are using straight distance, and a straight line is the quickest way to get from
+                //point a to b, this second condition should not apply.
+                if(!openSet.contains(adjacentCity) || tentativeGScore < gScoreMap.get(adjacentCity)) {
+                    //calculate all the scores
+                    parentMap.put(adjacentCity, currentCity);
+                    gScoreMap.put(adjacentCity, tentativeGScore);
+                    fScoreMap.put(adjacentCity,
+                            gScoreMap.get(adjacentCity) + PathFinderUtils.calculateDistance(adjacentCity, endCity));
+                    //This should always happen, as second condition should usually not be true.
+                    if(!openSet.contains(adjacentCity)) {
+                        openSet.add(adjacentCity);
+                    }
                 }
             }
-        }
 
-        // If no path is found
-        return new ArrayList<>();
+        }
+        return Collections.emptyList();
     }
 }
