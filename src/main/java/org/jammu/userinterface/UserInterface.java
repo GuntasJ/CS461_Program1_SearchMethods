@@ -129,6 +129,10 @@ public class UserInterface {
             path.forEach(System.out::print);
             System.out.println();
             System.out.println("Distance of path: " + PathFinderUtils.calculateDistance(path));
+            for(int i = 0; i < path.size() - 1; i++) {
+                System.out.println(path.get(i) + " " + path.get(i + 1));
+                System.out.println(PathFinderUtils.calculateDistance(path.get(i), path.get(i + 1)));
+            }
             System.out.println("\n\n");
         }
     }
